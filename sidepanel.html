@@ -30,7 +30,7 @@
       <div class="input-group">
         <label for="promptTemplate">Prompt Template:</label>
         <textarea id="promptTemplate" rows="5" placeholder="I'm working on LaTeX text. Here is the text I've selected:&#10;&#10;{{LATEX_TEXT}}&#10;&#10;My instruction: {{INSTRUCTIONS}}"></textarea>
-        <small class="help-text">Use {{LATEX_TEXT}} for selected text and {{INSTRUCTIONS}} for your instructions</small>
+        <small class="help-text">Use {{LATEX_TEXT}} for selected text, {{INSTRUCTIONS}} for your instructions, and {{CONTEXT}} for additional context</small>
       </div>
       <button id="saveSettings">Save Settings</button>
       </div>
@@ -43,6 +43,19 @@
         <h3>Selected Text</h3>
         <div id="selectedText" class="text-display">
           <p class="placeholder">Highlight text in the page to see it here</p>
+        </div>
+      </div>
+
+      <div class="context-container">
+        <div class="context-header">
+          <h3>Context (Optional)</h3>
+          <div class="context-controls">
+            <button id="clearContext" class="icon-btn" title="Clear context">🗑️</button>
+            <button id="toggleContext" class="toggle-btn">▼</button>
+          </div>
+        </div>
+        <div id="contextContent" class="context-content">
+          <textarea id="contextText" rows="6" placeholder="Paste additional context here (e.g., the full paper)"></textarea>
         </div>
       </div>
 

@@ -5,11 +5,16 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   setupMessageListeners();
   
-  // Start with settings collapsed
+  // Start with settings and context collapsed
   const settingsContent = document.getElementById('settingsContent');
   const toggleBtn = document.getElementById('toggleSettings');
   settingsContent.classList.add('collapsed');
   toggleBtn.classList.add('collapsed');
+  
+  const contextContent = document.getElementById('contextContent');
+  const contextToggleBtn = document.getElementById('toggleContext');
+  contextContent.classList.add('collapsed');
+  contextToggleBtn.classList.add('collapsed');
 });
 
 function loadSettings() {
@@ -42,6 +47,16 @@ function setupEventListeners() {
   // Toggle settings
   const settingsHeader = document.querySelector('.settings-header');
   settingsHeader.addEventListener('click', toggleSettings);
+  
+  // Toggle context
+  const contextHeader = document.querySelector('.context-header');
+  contextHeader.addEventListener('click', toggleContext);
+  
+  // Clear context button
+  document.getElementById('clearContext').addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevent toggling when clicking clear
+    document.getElementById('contextText').value = '';
+  });
 }
 
 function toggleSettings() {
@@ -49,6 +64,14 @@ function toggleSettings() {
   const toggleBtn = document.getElementById('toggleSettings');
   
   settingsContent.classList.toggle('collapsed');
+  toggleBtn.classList.toggle('collapsed');
+}
+
+function toggleContext() {
+  const contextContent = document.getElementById('contextContent');
+  const toggleBtn = document.getElementById('toggleContext');
+  
+  contextContent.classList.toggle('collapsed');
   toggleBtn.classList.toggle('collapsed');
 }
 
@@ -129,10 +152,14 @@ My instruction: {{INSTRUCTIONS}}`;
   
   const systemPrompt = "You are a helpful assistant specialized in LaTeX editing and academic writing. The user will provide LaTeX text and instructions for how to modify or improve it.";
   
+  // Get context text
+  const contextText = document.getElementById('contextText').value;
+  
   // Replace template variables
   const fullPrompt = promptTemplate
     .replace(/{{LATEX_TEXT}}/g, currentSelectedText)
-    .replace(/{{INSTRUCTIONS}}/g, userPrompt);
+    .replace(/{{INSTRUCTIONS}}/g, userPrompt)
+    .replace(/{{CONTEXT}}/g, contextText);
   
   try {
     const apiUrl = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=2024-02-01`;

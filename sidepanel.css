@@ -240,3 +240,74 @@ button:disabled {
   color: #7f8c8d;
   font-style: italic;
 }
+
+.context-container {
+  margin-bottom: 20px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+}
+
+.context-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  background: #f0f2f5;
+}
+
+.context-header:hover {
+  background: #e9ecef;
+}
+
+.context-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.context-content {
+  padding: 12px;
+  max-height: 300px;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.context-content.collapsed {
+  max-height: 0;
+  padding: 0 12px;
+  overflow: hidden;
+}
+
+.context-content textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.context-content textarea:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  padding: 4px 8px;
+  margin: 0;
+  width: auto;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.icon-btn:hover {
+  background: rgba(0,0,0,0.1);
+}
