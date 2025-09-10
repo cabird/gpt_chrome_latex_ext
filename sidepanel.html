@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>LaTeX Assistant</title>
   <link rel="stylesheet" href="sidepanel.css">
+  <script src="tokenizer.js"></script>
 </head>
 <body>
   <div class="container">
@@ -39,13 +40,6 @@
     <div class="divider"></div>
 
     <div class="assistant-section">
-      <div class="selected-text-container">
-        <h3>Selected Text</h3>
-        <div id="selectedText" class="text-display">
-          <p class="placeholder">Highlight text in the page to see it here</p>
-        </div>
-      </div>
-
       <div class="context-container">
         <div class="context-header">
           <h3>Context (Optional)</h3>
@@ -55,8 +49,29 @@
           </div>
         </div>
         <div id="contextContent" class="context-content">
+          <div class="context-management">
+            <div class="context-save-row">
+              <input type="text" id="contextName" placeholder="Enter context name..." />
+              <button id="saveContext" class="small-btn">Save</button>
+            </div>
+            <div class="context-load-row">
+              <select id="savedContexts">
+                <option value="">Select saved context...</option>
+              </select>
+              <button id="deleteContext" class="small-btn delete-btn">Delete</button>
+            </div>
+          </div>
           <textarea id="contextText" rows="6" placeholder="Paste additional context here (e.g., the full paper)"></textarea>
+          <div class="token-count" id="contextTokenCount">0 tokens</div>
         </div>
+      </div>
+
+      <div class="selected-text-container">
+        <h3>Selected Text</h3>
+        <div id="selectedText" class="text-display">
+          <p class="placeholder">Highlight text in the page to see it here</p>
+        </div>
+        <div class="token-count" id="selectedTokenCount">0 tokens</div>
       </div>
 
       <div class="input-group">
@@ -64,6 +79,7 @@
         <textarea id="userPrompt" rows="3" placeholder="e.g., Can you improve this sentence?"></textarea>
       </div>
 
+      <div class="token-count total-tokens" id="totalTokenCount">Total: 0 tokens</div>
       <button id="submitBtn" disabled>Process Text</button>
 
       <div class="response-container">

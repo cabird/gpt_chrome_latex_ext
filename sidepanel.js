@@ -1,7 +1,43 @@
 let currentSelectedText = '';
 
+function updateTokenCounts() {
+  const contextText = document.getElementById('contextText').value;
+  const selectedText = currentSelectedText;
+  const instructionText = document.getElementById('userPrompt').value;
+  const promptTemplate = document.getElementById('promptTemplate').value || 
+    `I'm working on LaTeX text. Here is the text I've selected:\n\n{{LATEX_TEXT}}\n\nMy instruction: {{INSTRUCTIONS}}`;
+  
+  // Count tokens for each field
+  const contextTokens = tokenizer.countTokens(contextText);
+  const selectedTokens = tokenizer.countTokens(selectedText);
+  const instructionTokens = tokenizer.countTokens(instructionText);
+  
+  // Build the full prompt to count total tokens
+  const fullPrompt = promptTemplate
+    .replace(/{{LATEX_TEXT}}/g, selectedText)
+    .replace(/{{INSTRUCTIONS}}/g, instructionText)
+    .replace(/{{CONTEXT}}/g, contextText);
+  
+  const totalTokens = tokenizer.countTokens(fullPrompt);
+  
+  // Update displays
+  document.getElementById('contextTokenCount').textContent = `${contextTokens.toLocaleString()} tokens`;
+  document.getElementById('selectedTokenCount').textContent = `${selectedTokens.toLocaleString()} tokens`;
+  
+  const totalElement = document.getElementById('totalTokenCount');
+  totalElement.textContent = `Total: ${totalTokens.toLocaleString()} tokens`;
+  
+  // Add warning if approaching limits (128k for GPT-4)
+  if (totalTokens > 120000) {
+    totalElement.classList.add('warning');
+  } else {
+    totalElement.classList.remove('warning');
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
+  loadSavedContexts();
   setupEventListeners();
   setupMessageListeners();
   
@@ -15,6 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const contextToggleBtn = document.getElementById('toggleContext');
   contextContent.classList.add('collapsed');
   contextToggleBtn.classList.add('collapsed');
+  
+  // Initialize token counts
+  updateTokenCounts();
 });
 
 function loadSettings() {
@@ -42,7 +81,11 @@ function setupEventListeners() {
   
   document.getElementById('userPrompt').addEventListener('input', () => {
     updateSubmitButton();
+    updateTokenCounts();
   });
+  
+  // Update token counts when context changes
+  document.getElementById('contextText').addEventListener('input', updateTokenCounts);
   
   // Toggle settings
   const settingsHeader = document.querySelector('.settings-header');
@@ -56,6 +99,22 @@ function setupEventListeners() {
   document.getElementById('clearContext').addEventListener('click', (e) => {
     e.stopPropagation(); // Prevent toggling when clicking clear
     document.getElementById('contextText').value = '';
+    updateTokenCounts();
+  });
+  
+  // Context management buttons
+  document.getElementById('saveContext').addEventListener('click', saveContext);
+  document.getElementById('deleteContext').addEventListener('click', deleteContext);
+  
+  // Auto-load context when selected
+  document.getElementById('savedContexts').addEventListener('change', () => {
+    const selectedName = document.getElementById('savedContexts').value;
+    const hasSelection = selectedName !== '';
+    document.getElementById('deleteContext').disabled = !hasSelection;
+    
+    if (hasSelection) {
+      loadContext(selectedName);
+    }
   });
 }
 
@@ -102,6 +161,7 @@ function updateSelectedText(text) {
   } else {
     container.innerHTML = '<p class="placeholder">Highlight text in the page to see it here</p>';
   }
+  updateTokenCounts();
 }
 
 function updateSubmitButton() {
@@ -228,4 +288,91 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+function loadSavedContexts() {
+  chrome.storage.local.get(['savedContexts'], (result) => {
+    const savedContexts = result.savedContexts || {};
+    const select = document.getElementById('savedContexts');
+    
+    // Clear existing options except the first one
+    select.innerHTML = '<option value="">Select saved context...</option>';
+    
+    // Add saved contexts to dropdown
+    Object.keys(savedContexts).forEach(name => {
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      select.appendChild(option);
+    });
+    
+    // Disable delete button initially
+    document.getElementById('deleteContext').disabled = true;
+  });
+}
+
+function saveContext() {
+  const contextName = document.getElementById('contextName').value.trim();
+  const contextText = document.getElementById('contextText').value.trim();
+  
+  if (!contextName) {
+    showStatus('Please enter a name for the context', 'error');
+    return;
+  }
+  
+  if (!contextText) {
+    showStatus('Please enter some context text to save', 'error');
+    return;
+  }
+  
+  chrome.storage.local.get(['savedContexts'], (result) => {
+    const savedContexts = result.savedContexts || {};
+    
+    savedContexts[contextName] = {
+      text: contextText,
+      timestamp: new Date().toISOString()
+    };
+    
+    chrome.storage.local.set({ savedContexts }, () => {
+      showStatus(`Context "${contextName}" saved successfully`, 'success');
+      document.getElementById('contextName').value = '';
+      loadSavedContexts(); // Refresh the dropdown
+    });
+  });
+}
+
+function loadContext(selectedName) {
+  if (!selectedName) return;
+  
+  chrome.storage.local.get(['savedContexts'], (result) => {
+    const savedContexts = result.savedContexts || {};
+    
+    if (savedContexts[selectedName]) {
+      document.getElementById('contextText').value = savedContexts[selectedName].text;
+      showStatus(`Context "${selectedName}" loaded`, 'success');
+      updateTokenCounts();
+    }
+  });
+}
+
+function deleteContext() {
+  const selectedName = document.getElementById('savedContexts').value;
+  
+  if (!selectedName) return;
+  
+  if (!confirm(`Are you sure you want to delete the context "${selectedName}"?`)) {
+    return;
+  }
+  
+  chrome.storage.local.get(['savedContexts'], (result) => {
+    const savedContexts = result.savedContexts || {};
+    
+    delete savedContexts[selectedName];
+    
+    chrome.storage.local.set({ savedContexts }, () => {
+      showStatus(`Context "${selectedName}" deleted`, 'success');
+      document.getElementById('savedContexts').value = '';
+      loadSavedContexts(); // Refresh the dropdown
+    });
+  });
 }
