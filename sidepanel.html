@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>LaTeX Assistant</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="container">
+    <h2>LaTeX Assistant</h2>
+    
+    <div class="settings-section">
+      <div class="settings-header">
+        <h3>Settings</h3>
+        <button id="toggleSettings" class="toggle-btn">▼</button>
+      </div>
+      <div id="settingsContent" class="settings-content">
+      <div class="input-group">
+        <label for="apiKey">Azure OpenAI API Key:</label>
+        <input type="password" id="apiKey" placeholder="Enter your API key">
+      </div>
+      <div class="input-group">
+        <label for="endpoint">Azure Endpoint:</label>
+        <input type="text" id="endpoint" placeholder="https://your-resource.openai.azure.com">
+      </div>
+      <div class="input-group">
+        <label for="deployment">Deployment Name:</label>
+        <input type="text" id="deployment" placeholder="your-deployment-name">
+      </div>
+      <div class="input-group">
+        <label for="promptTemplate">Prompt Template:</label>
+        <textarea id="promptTemplate" rows="5" placeholder="I'm working on LaTeX text. Here is the text I've selected:&#10;&#10;{{LATEX_TEXT}}&#10;&#10;My instruction: {{INSTRUCTIONS}}"></textarea>
+        <small class="help-text">Use {{LATEX_TEXT}} for selected text and {{INSTRUCTIONS}} for your instructions</small>
+      </div>
+      <button id="saveSettings">Save Settings</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="assistant-section">
+      <div class="selected-text-container">
+        <h3>Selected Text</h3>
+        <div id="selectedText" class="text-display">
+          <p class="placeholder">Highlight text in the page to see it here</p>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="userPrompt">Your instruction:</label>
+        <textarea id="userPrompt" rows="3" placeholder="e.g., Can you improve this sentence?"></textarea>
+      </div>
+
+      <button id="submitBtn" disabled>Process Text</button>
+
+      <div class="response-container">
+        <h3>AI Response</h3>
+        <div id="responseText" class="text-display">
+          <p class="placeholder">Response will appear here</p>
+        </div>
+        <button id="copyBtn" style="display: none;">Copy to Clipboard</button>
+      </div>
+    </div>
+
+    <div id="statusMessage" class="status"></div>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
