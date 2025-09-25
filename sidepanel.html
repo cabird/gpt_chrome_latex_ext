@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>LaTeX Assistant</title>
   <link rel="stylesheet" href="sidepanel.css">
-  <script src="tokenizer.js"></script>
+  <script src="o200k_base.js"></script>
 </head>
 <body>
   <div class="container">
@@ -16,6 +16,20 @@
         <button id="toggleSettings" class="toggle-btn">▼</button>
       </div>
       <div id="settingsContent" class="settings-content">
+      <div class="input-group">
+        <label for="modelConfig">Model Configuration:</label>
+        <div class="config-selector">
+          <select id="modelConfig">
+            <option value="">Select configuration...</option>
+            <option value="__new__">+ New Configuration</option>
+          </select>
+          <button id="deleteConfig" class="icon-btn delete-config-btn" title="Delete configuration" style="display: none;">🗑️</button>
+        </div>
+      </div>
+      <div class="input-group">
+        <label for="configName">Configuration Name:</label>
+        <input type="text" id="configName" placeholder="e.g., GPT-4 Production">
+      </div>
       <div class="input-group">
         <label for="apiKey">Azure OpenAI API Key:</label>
         <input type="password" id="apiKey" placeholder="Enter your API key">
@@ -33,7 +47,7 @@
         <textarea id="promptTemplate" rows="5" placeholder="I'm working on LaTeX text. Here is the text I've selected:&#10;&#10;{{LATEX_TEXT}}&#10;&#10;My instruction: {{INSTRUCTIONS}}"></textarea>
         <small class="help-text">Use {{LATEX_TEXT}} for selected text, {{INSTRUCTIONS}} for your instructions, and {{CONTEXT}} for additional context</small>
       </div>
-      <button id="saveSettings">Save Settings</button>
+      <button id="saveConfig">Save Configuration</button>
       </div>
     </div>
 
@@ -86,6 +100,11 @@
         <h3>AI Response</h3>
         <div id="responseText" class="text-display">
           <p class="placeholder">Response will appear here</p>
+        </div>
+        <div id="tokenUsage" class="token-usage" style="display: none;">
+          <span class="usage-item">Prompt: <strong id="promptTokens">0</strong> tokens (<span id="newTokens">0</span> new, <span id="cachedTokens">0</span> cached)</span>
+          <span class="usage-separator">•</span>
+          <span class="usage-item">Completion: <strong id="completionTokens">0</strong> tokens</span>
         </div>
         <button id="copyBtn" style="display: none;">Copy to Clipboard</button>
       </div>

@@ -392,3 +392,63 @@ button:disabled {
   color: #856404;
   border: 1px solid #ffeeba;
 }
+
+.token-usage {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.usage-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.usage-item strong {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.usage-separator {
+  color: #dee2e6;
+  font-weight: 300;
+}
+
+#newTokens {
+  color: #28a745;
+}
+
+#cachedTokens {
+  color: #6c757d;
+  font-style: italic;
+}
+
+.config-selector {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.config-selector select {
+  flex: 1;
+}
+
+.delete-config-btn {
+  background: #e74c3c;
+  color: white;
+  font-size: 14px;
+  padding: 6px 10px;
+}
+
+.delete-config-btn:hover {
+  background: #c0392b;
+}

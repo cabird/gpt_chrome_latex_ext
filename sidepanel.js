@@ -1,16 +1,22 @@
 let currentSelectedText = '';
 
 function updateTokenCounts() {
+  // Check if tokenizer is loaded
+  if (typeof GPTTokenizer_o200k_base === 'undefined') {
+    console.warn('Tokenizer not loaded yet');
+    return;
+  }
+  
   const contextText = document.getElementById('contextText').value;
   const selectedText = currentSelectedText;
   const instructionText = document.getElementById('userPrompt').value;
   const promptTemplate = document.getElementById('promptTemplate').value || 
     `I'm working on LaTeX text. Here is the text I've selected:\n\n{{LATEX_TEXT}}\n\nMy instruction: {{INSTRUCTIONS}}`;
   
-  // Count tokens for each field
-  const contextTokens = tokenizer.countTokens(contextText);
-  const selectedTokens = tokenizer.countTokens(selectedText);
-  const instructionTokens = tokenizer.countTokens(instructionText);
+  // Count tokens for each field using o200k_base tokenizer
+  const contextTokens = contextText ? GPTTokenizer_o200k_base.encode(contextText).length : 0;
+  const selectedTokens = selectedText ? GPTTokenizer_o200k_base.encode(selectedText).length : 0;
+  const instructionTokens = instructionText ? GPTTokenizer_o200k_base.encode(instructionText).length : 0;
   
   // Build the full prompt to count total tokens
   const fullPrompt = promptTemplate
@@ -18,7 +24,7 @@ function updateTokenCounts() {
     .replace(/{{INSTRUCTIONS}}/g, instructionText)
     .replace(/{{CONTEXT}}/g, contextText);
   
-  const totalTokens = tokenizer.countTokens(fullPrompt);
+  const totalTokens = fullPrompt ? GPTTokenizer_o200k_base.encode(fullPrompt).length : 0;
   
   // Update displays
   document.getElementById('contextTokenCount').textContent = `${contextTokens.toLocaleString()} tokens`;
@@ -36,7 +42,7 @@ function updateTokenCounts() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadSettings();
+  loadModelConfigs();
   loadSavedContexts();
   setupEventListeners();
   setupMessageListeners();
@@ -52,19 +58,46 @@ document.addEventListener('DOMContentLoaded', () => {
   contextContent.classList.add('collapsed');
   contextToggleBtn.classList.add('collapsed');
   
-  // Initialize token counts
-  updateTokenCounts();
+  // Initialize token counts after a delay to ensure GPTTokenizer is loaded
+  setTimeout(() => {
+    updateTokenCounts();
+  }, 100);
 });
 
-function loadSettings() {
-  chrome.storage.local.get(['apiKey', 'endpoint', 'deployment', 'promptTemplate'], (result) => {
-    if (result.apiKey) document.getElementById('apiKey').value = result.apiKey;
-    if (result.endpoint) document.getElementById('endpoint').value = result.endpoint;
-    if (result.deployment) document.getElementById('deployment').value = result.deployment;
+function generateConfigId() {
+  return 'config_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+function loadModelConfigs() {
+  chrome.storage.local.get(['modelConfigs', 'activeConfigId', 'promptTemplate'], (result) => {
+    const configs = result.modelConfigs || {};
+    const activeId = result.activeConfigId;
+    
+    // Load configs into dropdown
+    const select = document.getElementById('modelConfig');
+    select.innerHTML = '<option value="">Select configuration...</option>';
+    select.innerHTML += '<option value="__new__">+ New Configuration</option>';
+    
+    Object.keys(configs).forEach(id => {
+      const option = document.createElement('option');
+      option.value = id;
+      option.textContent = configs[id].name;
+      select.appendChild(option);
+    });
+    
+    // Load active config if exists
+    if (activeId && configs[activeId]) {
+      select.value = activeId;
+      loadConfigFields(configs[activeId]);
+      document.getElementById('deleteConfig').style.display = 'inline-block';
+    } else {
+      clearConfigFields();
+    }
+    
+    // Load prompt template
     if (result.promptTemplate) {
       document.getElementById('promptTemplate').value = result.promptTemplate;
     } else {
-      // Set default template
       document.getElementById('promptTemplate').value = `I'm working on LaTeX text. Here is the text I've selected:
 
 {{LATEX_TEXT}}
@@ -74,8 +107,50 @@ My instruction: {{INSTRUCTIONS}}`;
   });
 }
 
+function loadConfigFields(config) {
+  document.getElementById('configName').value = config.name || '';
+  document.getElementById('apiKey').value = config.apiKey || '';
+  document.getElementById('endpoint').value = config.endpoint || '';
+  document.getElementById('deployment').value = config.deployment || '';
+}
+
+function clearConfigFields() {
+  document.getElementById('configName').value = '';
+  document.getElementById('apiKey').value = '';
+  document.getElementById('endpoint').value = '';
+  document.getElementById('deployment').value = '';
+  document.getElementById('deleteConfig').style.display = 'none';
+}
+
 function setupEventListeners() {
-  document.getElementById('saveSettings').addEventListener('click', saveSettings);
+  document.getElementById('saveConfig').addEventListener('click', saveConfig);
+  document.getElementById('deleteConfig').addEventListener('click', deleteConfig);
+  
+  // Model config dropdown
+  document.getElementById('modelConfig').addEventListener('change', (e) => {
+    const selectedValue = e.target.value;
+    
+    if (selectedValue === '__new__') {
+      // New configuration
+      clearConfigFields();
+      document.getElementById('configName').focus();
+    } else if (selectedValue) {
+      // Load existing configuration
+      chrome.storage.local.get(['modelConfigs'], (result) => {
+        const configs = result.modelConfigs || {};
+        if (configs[selectedValue]) {
+          loadConfigFields(configs[selectedValue]);
+          document.getElementById('deleteConfig').style.display = 'inline-block';
+          
+          // Set as active config
+          chrome.storage.local.set({ activeConfigId: selectedValue });
+        }
+      });
+    } else {
+      // No selection
+      document.getElementById('deleteConfig').style.display = 'none';
+    }
+  });
   document.getElementById('submitBtn').addEventListener('click', processText);
   document.getElementById('copyBtn').addEventListener('click', copyResponse);
   
@@ -170,23 +245,86 @@ function updateSubmitButton() {
   document.getElementById('submitBtn').disabled = !(hasText && hasPrompt);
 }
 
-function saveSettings() {
-  const apiKey = document.getElementById('apiKey').value;
-  const endpoint = document.getElementById('endpoint').value;
-  const deployment = document.getElementById('deployment').value;
+function saveConfig() {
+  const configName = document.getElementById('configName').value.trim();
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const endpoint = document.getElementById('endpoint').value.trim();
+  const deployment = document.getElementById('deployment').value.trim();
   const promptTemplate = document.getElementById('promptTemplate').value;
   
-  chrome.storage.local.set({
-    apiKey: apiKey,
-    endpoint: endpoint,
-    deployment: deployment,
-    promptTemplate: promptTemplate
-  }, () => {
-    showStatus('Settings saved successfully!', 'success');
+  if (!configName) {
+    showStatus('Please enter a configuration name', 'error');
+    return;
+  }
+  
+  if (!apiKey || !endpoint || !deployment) {
+    showStatus('Please fill in all required fields', 'error');
+    return;
+  }
+  
+  chrome.storage.local.get(['modelConfigs'], (result) => {
+    const configs = result.modelConfigs || {};
+    const select = document.getElementById('modelConfig');
+    
+    // Check if updating existing or creating new
+    let configId = select.value;
+    if (!configId || configId === '__new__') {
+      configId = generateConfigId();
+    }
+    
+    configs[configId] = {
+      name: configName,
+      apiKey: apiKey,
+      endpoint: endpoint,
+      deployment: deployment
+    };
+    
+    chrome.storage.local.set({
+      modelConfigs: configs,
+      activeConfigId: configId,
+      promptTemplate: promptTemplate
+    }, () => {
+      showStatus('Configuration saved successfully!', 'success');
+      loadModelConfigs();
+      document.getElementById('modelConfig').value = configId;
+    });
+  });
+}
+
+function deleteConfig() {
+  const select = document.getElementById('modelConfig');
+  const configId = select.value;
+  
+  if (!configId || configId === '__new__') return;
+  
+  const configName = document.getElementById('configName').value;
+  if (!confirm(`Delete configuration "${configName}"?`)) return;
+  
+  chrome.storage.local.get(['modelConfigs', 'activeConfigId'], (result) => {
+    const configs = result.modelConfigs || {};
+    delete configs[configId];
+    
+    // Clear active if it was the deleted one
+    const newActiveId = result.activeConfigId === configId ? null : result.activeConfigId;
+    
+    chrome.storage.local.set({
+      modelConfigs: configs,
+      activeConfigId: newActiveId
+    }, () => {
+      showStatus('Configuration deleted', 'success');
+      loadModelConfigs();
+    });
   });
 }
 
 async function processText() {
+  // Get current configuration
+  const configId = document.getElementById('modelConfig').value;
+  if (!configId || configId === '__new__') {
+    showStatus('Please select a model configuration', 'error');
+    return;
+  }
+  
   const apiKey = document.getElementById('apiKey').value;
   const endpoint = document.getElementById('endpoint').value;
   const deployment = document.getElementById('deployment').value;
@@ -244,9 +382,19 @@ My instruction: {{INSTRUCTIONS}}`;
     }
     
     const data = await response.json();
+    
+    // Log the full response to console for inspection
+    console.log('OpenAI API Response:', data);
+    
     const responseText = data.choices[0].message.content;
     
     displayResponse(responseText);
+    
+    // Display token usage if available
+    if (data.usage) {
+      displayTokenUsage(data.usage);
+    }
+    
     showStatus('Processing complete!', 'success');
   } catch (error) {
     console.error('Error:', error);
@@ -288,6 +436,20 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+function displayTokenUsage(usage) {
+  const promptTokens = usage.prompt_tokens || 0;
+  const completionTokens = usage.completion_tokens || 0;
+  const cachedTokens = usage.prompt_tokens_details?.cached_tokens || 0;
+  const newTokens = promptTokens - cachedTokens;
+  
+  document.getElementById('promptTokens').textContent = promptTokens.toLocaleString();
+  document.getElementById('newTokens').textContent = newTokens.toLocaleString();
+  document.getElementById('cachedTokens').textContent = cachedTokens.toLocaleString();
+  document.getElementById('completionTokens').textContent = completionTokens.toLocaleString();
+  
+  document.getElementById('tokenUsage').style.display = 'block';
 }
 
 function loadSavedContexts() {
