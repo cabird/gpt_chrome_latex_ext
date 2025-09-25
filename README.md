@@ -14,20 +14,13 @@ A Chrome extension that provides AI-powered LaTeX editing assistance using Azure
 
 ## Setup Instructions
 
-### 1. Generate Icons
-1. Open `generate-icons.html` in a browser
-2. Right-click each canvas and save as:
-   - `icon-16.png`
-   - `icon-48.png`
-   - `icon-128.png`
-
-### 2. Install the Extension
+### 1. Install the Extension
 1. Open Chrome and navigate to `chrome://extensions/`
 2. Enable "Developer mode" (toggle in top right)
 3. Click "Load unpacked"
 4. Select this extension directory
 
-### 3. Configure Azure OpenAI
+### 2. Configure Azure OpenAI
 
 #### First-Time Setup
 1. Click the extension icon in Chrome toolbar to open the side panel
@@ -108,7 +101,7 @@ The total turns yellow when approaching model limits (>120k tokens).
 - **No text appearing**: Make sure you've highlighted text in the webpage
 - **API errors**: Verify your Azure OpenAI credentials and endpoint
 - **Token count warnings**: Reduce context or selected text if approaching limits
-- **Extension not loading**: Check that all icon files are generated and in place
+- **Extension not loading**: Check that all files are in place
 
 ## Files Structure
 
@@ -117,5 +110,4 @@ The total turns yellow when approaching model limits (>120k tokens).
 - `content.js` - Text selection handler
 - `background.js` - Extension background service
 - `o200k_base.js` - OpenAI tokenizer for accurate counting
-- `icon-*.png` - Extension icons (must be generated)
-- `generate-icons.html` - Icon generator utility
+- `icon-*.png` - Extension icons
