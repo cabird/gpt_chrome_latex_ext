@@ -1,16 +1,20 @@
 # LaTeX Editor Assistant Chrome Extension
 
-A Chrome extension that provides AI-powered LaTeX editing assistance using Azure OpenAI. Features include text selection from web pages, context management, accurate token counting, and support for multiple Azure OpenAI configurations.
+A Chrome extension that provides AI-powered LaTeX editing assistance using Azure OpenAI or standard OpenAI API. Features include text selection from web pages, context management, accurate token counting, and support for multiple model configurations.
+
+![LaTeX Assistant Screenshot](screenshot.png)
 
 ## Features
 
 - **Text Selection**: Highlight text in any webpage (especially useful for Overleaf)
-- **Multiple Model Configurations**: Switch between different Azure OpenAI deployments
+- **Multiple Model Configurations**: Switch between different model providers and configurations
+- **Dual Provider Support**: Works with both Azure OpenAI and standard OpenAI API
 - **Context Management**: Save and load multiple named contexts for reuse
 - **Token Counting**: Real-time, accurate token counting using OpenAI's o200k tokenizer
 - **Customizable Prompts**: Define your own prompt templates with variable substitution
 - **Token Usage Tracking**: See prompt, completion, and cached token usage after each request
 - **Collapsible UI**: Settings and context sections can be collapsed to save space
+- **Loading Indicators**: Visual feedback during API calls
 
 ## Setup Instructions
 
@@ -20,23 +24,33 @@ A Chrome extension that provides AI-powered LaTeX editing assistance using Azure
 3. Click "Load unpacked"
 4. Select this extension directory
 
-### 2. Configure Azure OpenAI
+### 2. Configure Your AI Provider
 
 #### First-Time Setup
 1. Click the extension icon in Chrome toolbar to open the side panel
 2. Click on "Settings" header to expand settings (starts collapsed)
 3. Select "+ New Configuration" from the dropdown
-4. Enter configuration details:
-   - **Configuration Name**: e.g., "GPT-4 Production"
-   - **Azure OpenAI API Key**: Your API key
-   - **Azure Endpoint**: e.g., `https://your-resource.openai.azure.com`
-   - **Deployment Name**: Your model deployment name
-5. Click "Save Configuration"
+4. Choose your provider and enter configuration details:
+
+**For Azure OpenAI:**
+- **Configuration Name**: e.g., "GPT-4 Production"
+- **Provider**: Select "Azure OpenAI"
+- **API Key**: Your Azure OpenAI API key
+- **Azure Endpoint**: e.g., `https://your-resource.openai.azure.com`
+- **Deployment Name**: Your model deployment name
+
+**For OpenAI:**
+- **Configuration Name**: e.g., "GPT-5 API"
+- **Provider**: Select "OpenAI"
+- **API Key**: Your OpenAI API key
+- **Model**: Select from dropdown (GPT-5, GPT-4, etc.)
+
+5. Click "Save" button next to the configuration name
 
 #### Managing Multiple Configurations
 - **Add New**: Select "+ New Configuration" from dropdown
 - **Switch**: Select a configuration from dropdown (automatically loads)
-- **Update**: Make changes and click "Save Configuration"
+- **Update**: Make changes and click "Save" (creates new config if name changed)
 - **Delete**: Click the trash icon next to the dropdown
 
 ## Usage Guide
