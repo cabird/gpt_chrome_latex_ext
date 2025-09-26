@@ -1,6 +1,8 @@
 # LaTeX Editor Assistant Chrome Extension
 
 A Chrome extension that provides AI-powered LaTeX editing assistance using Azure OpenAI or standard OpenAI API. Features include text selection from web pages, context management, accurate token counting, and support for multiple model configurations.
+ 
+The extension runs fully locally in your browser (except for API calls to the LLM). All settings, API keys, contexts, etc., are stored locally in your browser's extension storage and never leave your device.
 
 ![LaTeX Assistant Screenshot](screenshot.png)
 
@@ -66,7 +68,7 @@ A Chrome extension that provides AI-powered LaTeX editing assistance using Azure
 8. Click "Copy to Clipboard" to use the improved text
 
 ### Using Context (Optional)
-The Context section allows you to provide additional background information:
+The Context section allows you to provide additional background information (for instance, I often include the full latex source of my paper):
 
 1. Click "Context (Optional)" header to expand
 2. Paste your context (e.g., the full paper you're working on)
