@@ -31,16 +31,35 @@
         <input type="text" id="configName" placeholder="e.g., GPT-4 Production">
       </div>
       <div class="input-group">
-        <label for="apiKey">Azure OpenAI API Key:</label>
-        <input type="password" id="apiKey" placeholder="Enter your API key">
+        <label for="provider">Provider:</label>
+        <select id="provider">
+          <option value="azure">Azure OpenAI</option>
+          <option value="openai">OpenAI</option>
+        </select>
       </div>
       <div class="input-group">
+        <label for="apiKey">API Key:</label>
+        <input type="password" id="apiKey" placeholder="Enter your API key">
+      </div>
+      <div class="input-group azure-only">
         <label for="endpoint">Azure Endpoint:</label>
         <input type="text" id="endpoint" placeholder="https://your-resource.openai.azure.com">
       </div>
-      <div class="input-group">
+      <div class="input-group azure-only">
         <label for="deployment">Deployment Name:</label>
         <input type="text" id="deployment" placeholder="your-deployment-name">
+      </div>
+      <div class="input-group openai-only" style="display: none;">
+        <label for="model">Model:</label>
+        <select id="model">
+          <option value="gpt-5">GPT-5</option>
+          <option value="gpt-5-mini">GPT-5 Mini</option>
+          <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
+          <option value="gpt-4">GPT-4</option>
+          <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+          <option value="gpt-4o">GPT-4o</option>
+          <option value="gpt-4o-mini">GPT-4o Mini</option>
+        </select>
       </div>
       <div class="input-group">
         <label for="promptTemplate">Prompt Template:</label>

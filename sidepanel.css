@@ -53,15 +53,14 @@ h3 {
 
 .settings-content {
   padding: 15px;
-  max-height: 500px;
-  overflow-y: auto;
-  transition: max-height 0.3s ease;
+  transition: padding 0.3s ease;
 }
 
 .settings-content.collapsed {
   max-height: 0;
   padding: 0 15px;
   overflow: hidden;
+  transition: max-height 0.3s ease;
 }
 
 .toggle-btn {

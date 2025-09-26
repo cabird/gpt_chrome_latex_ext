@@ -109,17 +109,42 @@ My instruction: {{INSTRUCTIONS}}`;
 
 function loadConfigFields(config) {
   document.getElementById('configName').value = config.name || '';
+  document.getElementById('provider').value = config.provider || 'azure';
   document.getElementById('apiKey').value = config.apiKey || '';
+
+  // Azure-specific fields
   document.getElementById('endpoint').value = config.endpoint || '';
   document.getElementById('deployment').value = config.deployment || '';
+
+  // OpenAI-specific fields
+  document.getElementById('model').value = config.model || 'gpt-4-turbo-preview';
+
+  // Update UI visibility
+  updateProviderFields(config.provider || 'azure');
+}
+
+function updateProviderFields(provider) {
+  const azureFields = document.querySelectorAll('.azure-only');
+  const openaiFields = document.querySelectorAll('.openai-only');
+
+  if (provider === 'azure') {
+    azureFields.forEach(el => el.style.display = 'block');
+    openaiFields.forEach(el => el.style.display = 'none');
+  } else {
+    azureFields.forEach(el => el.style.display = 'none');
+    openaiFields.forEach(el => el.style.display = 'block');
+  }
 }
 
 function clearConfigFields() {
   document.getElementById('configName').value = '';
+  document.getElementById('provider').value = 'azure';
   document.getElementById('apiKey').value = '';
   document.getElementById('endpoint').value = '';
   document.getElementById('deployment').value = '';
+  document.getElementById('model').value = 'gpt-4-turbo-preview';
   document.getElementById('deleteConfig').style.display = 'none';
+  updateProviderFields('azure');
 }
 
 function setupEventListeners() {
@@ -153,6 +178,11 @@ function setupEventListeners() {
   });
   document.getElementById('submitBtn').addEventListener('click', processText);
   document.getElementById('copyBtn').addEventListener('click', copyResponse);
+
+  // Provider dropdown
+  document.getElementById('provider').addEventListener('change', (e) => {
+    updateProviderFields(e.target.value);
+  });
   
   document.getElementById('userPrompt').addEventListener('input', () => {
     updateSubmitButton();
@@ -215,10 +245,16 @@ function setupMessageListeners() {
       updateSelectedText(request.text);
     }
   });
-  
+
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]) {
       chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_SELECTED_TEXT' }, (response) => {
+        // Check for runtime errors (content script not injected)
+        if (chrome.runtime.lastError) {
+          console.log('Content script not available on this tab:', chrome.runtime.lastError.message);
+          // This is normal for chrome:// pages or tabs opened before extension was installed
+          return;
+        }
         if (response && response.text) {
           updateSelectedText(response.text);
         }
@@ -247,38 +283,66 @@ function updateSubmitButton() {
 
 function saveConfig() {
   const configName = document.getElementById('configName').value.trim();
+  const provider = document.getElementById('provider').value;
   const apiKey = document.getElementById('apiKey').value.trim();
-  const endpoint = document.getElementById('endpoint').value.trim();
-  const deployment = document.getElementById('deployment').value.trim();
   const promptTemplate = document.getElementById('promptTemplate').value;
-  
+
   if (!configName) {
     showStatus('Please enter a configuration name', 'error');
     return;
   }
-  
-  if (!apiKey || !endpoint || !deployment) {
-    showStatus('Please fill in all required fields', 'error');
+
+  if (!apiKey) {
+    showStatus('Please enter an API key', 'error');
     return;
+  }
+
+  // Provider-specific validation
+  let endpoint = '';
+  let deployment = '';
+  let model = '';
+
+  if (provider === 'azure') {
+    endpoint = document.getElementById('endpoint').value.trim();
+    deployment = document.getElementById('deployment').value.trim();
+
+    if (!endpoint || !deployment) {
+      showStatus('Please fill in all Azure OpenAI fields', 'error');
+      return;
+    }
+  } else {
+    model = document.getElementById('model').value;
+
+    if (!model) {
+      showStatus('Please select a model', 'error');
+      return;
+    }
   }
   
   chrome.storage.local.get(['modelConfigs'], (result) => {
     const configs = result.modelConfigs || {};
     const select = document.getElementById('modelConfig');
-    
+
     // Check if updating existing or creating new
     let configId = select.value;
-    if (!configId || configId === '__new__') {
+    const isNewConfig = !configId || configId === '__new__';
+
+    // If name changed on existing config, treat as new config
+    if (!isNewConfig && configs[configId] && configs[configId].name !== configName) {
+      configId = generateConfigId();
+    } else if (isNewConfig) {
       configId = generateConfigId();
     }
-    
+
     configs[configId] = {
       name: configName,
+      provider: provider,
       apiKey: apiKey,
       endpoint: endpoint,
-      deployment: deployment
+      deployment: deployment,
+      model: model
     };
-    
+
     chrome.storage.local.set({
       modelConfigs: configs,
       activeConfigId: configId,
@@ -324,57 +388,110 @@ async function processText() {
     showStatus('Please select a model configuration', 'error');
     return;
   }
-  
-  const apiKey = document.getElementById('apiKey').value;
-  const endpoint = document.getElementById('endpoint').value;
-  const deployment = document.getElementById('deployment').value;
-  const userPrompt = document.getElementById('userPrompt').value;
-  let promptTemplate = document.getElementById('promptTemplate').value;
-  
-  if (!apiKey || !endpoint || !deployment) {
-    showStatus('Please configure your Azure OpenAI settings first', 'error');
-    return;
-  }
-  
-  // Use default template if none is set
-  if (!promptTemplate) {
-    promptTemplate = `I'm working on LaTeX text. Here is the text I've selected:
+
+  // Get config details
+  chrome.storage.local.get(['modelConfigs'], async (result) => {
+    const configs = result.modelConfigs || {};
+    const config = configs[configId];
+
+    if (!config) {
+      showStatus('Configuration not found', 'error');
+      return;
+    }
+
+    const provider = config.provider || 'azure';
+    const apiKey = config.apiKey;
+    const userPrompt = document.getElementById('userPrompt').value;
+    let promptTemplate = document.getElementById('promptTemplate').value;
+
+    // Use default template if none is set
+    if (!promptTemplate) {
+      promptTemplate = `I'm working on LaTeX text. Here is the text I've selected:
 
 {{LATEX_TEXT}}
 
 My instruction: {{INSTRUCTIONS}}`;
-  }
-  
-  document.getElementById('submitBtn').disabled = true;
-  showStatus('Processing...', 'info');
-  
-  const systemPrompt = "You are a helpful assistant specialized in LaTeX editing and academic writing. The user will provide LaTeX text and instructions for how to modify or improve it.";
-  
-  // Get context text
-  const contextText = document.getElementById('contextText').value;
-  
-  // Replace template variables
-  const fullPrompt = promptTemplate
-    .replace(/{{LATEX_TEXT}}/g, currentSelectedText)
-    .replace(/{{INSTRUCTIONS}}/g, userPrompt)
-    .replace(/{{CONTEXT}}/g, contextText);
-  
-  try {
-    const apiUrl = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=2024-02-01`;
-    
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': apiKey
-      },
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: fullPrompt }
-        ]
-      })
-    });
+    }
+
+    document.getElementById('submitBtn').disabled = true;
+    showStatus('Processing...', 'info');
+
+    const systemPrompt = "You are a helpful assistant specialized in LaTeX editing and academic writing. The user will provide LaTeX text and instructions for how to modify or improve it.";
+
+    // Get context text
+    const contextText = document.getElementById('contextText').value;
+
+    // Replace template variables
+    const fullPrompt = promptTemplate
+      .replace(/{{LATEX_TEXT}}/g, currentSelectedText)
+      .replace(/{{INSTRUCTIONS}}/g, userPrompt)
+      .replace(/{{CONTEXT}}/g, contextText);
+
+    try {
+      let apiUrl, headers, body;
+
+      if (provider === 'azure') {
+        // Azure OpenAI API
+        apiUrl = `${config.endpoint}/openai/deployments/${config.deployment}/chat/completions?api-version=2024-02-01`;
+        headers = {
+          'Content-Type': 'application/json',
+          'api-key': apiKey
+        };
+        body = JSON.stringify({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: fullPrompt }
+          ]
+        });
+      } else {
+        // Standard OpenAI API
+        apiUrl = 'https://api.openai.com/v1/chat/completions';
+        headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        };
+        body = JSON.stringify({
+          model: config.model || 'gpt-4-turbo-preview',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: fullPrompt }
+          ]
+        });
+      }
+
+      // Calculate token counts for debug output
+      const systemTokens = GPTTokenizer_o200k_base ? GPTTokenizer_o200k_base.encode(systemPrompt).length : 0;
+      const promptTokens = GPTTokenizer_o200k_base ? GPTTokenizer_o200k_base.encode(fullPrompt).length : 0;
+      const totalTokens = systemTokens + promptTokens;
+
+      // Debug logging
+      console.log('=== API Call Debug Info ===');
+      console.log('Provider:', provider);
+      console.log('Full URL:', apiUrl);
+      console.log('Model:', provider === 'openai' ? (config.model || 'gpt-4-turbo-preview') : config.deployment);
+      console.log('Token Counts:', {
+        system: systemTokens,
+        prompt: promptTokens,
+        total: totalTokens
+      });
+
+      // Show truncated request body for debug
+      const parsedBody = JSON.parse(body);
+      const truncatedBody = {
+        ...parsedBody,
+        messages: parsedBody.messages.map(msg => ({
+          role: msg.role,
+          content: msg.content.length > 100 ? msg.content.substring(0, 100) + '...[truncated]' : msg.content
+        }))
+      };
+      console.log('Request Body (truncated):', truncatedBody);
+      console.log('===========================');
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: headers,
+        body: body
+      });
     
     if (!response.ok) {
       const error = await response.text();
@@ -403,6 +520,7 @@ My instruction: {{INSTRUCTIONS}}`;
     document.getElementById('submitBtn').disabled = false;
     updateSubmitButton();
   }
+  });
 }
 
 function displayResponse(text) {
