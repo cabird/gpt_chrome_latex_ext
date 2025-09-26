@@ -28,7 +28,10 @@
       </div>
       <div class="input-group">
         <label for="configName">Configuration Name:</label>
-        <input type="text" id="configName" placeholder="e.g., GPT-4 Production">
+        <div class="config-name-row">
+          <input type="text" id="configName" placeholder="e.g., GPT-4 Production">
+          <button id="saveConfig">Save</button>
+        </div>
       </div>
       <div class="input-group">
         <label for="provider">Provider:</label>
@@ -66,7 +69,6 @@
         <textarea id="promptTemplate" rows="5" placeholder="I'm working on LaTeX text. Here is the text I've selected:&#10;&#10;{{LATEX_TEXT}}&#10;&#10;My instruction: {{INSTRUCTIONS}}"></textarea>
         <small class="help-text">Use {{LATEX_TEXT}} for selected text, {{INSTRUCTIONS}} for your instructions, and {{CONTEXT}} for additional context</small>
       </div>
-      <button id="saveConfig">Save Configuration</button>
       </div>
     </div>
 
@@ -113,12 +115,19 @@
       </div>
 
       <div class="token-count total-tokens" id="totalTokenCount">Total: 0 tokens</div>
-      <button id="submitBtn" disabled>Process Text</button>
+      <button id="submitBtn" disabled>
+        <span id="submitBtnText">Process Text</span>
+        <span id="submitBtnSpinner" class="spinner" style="display: none;"></span>
+      </button>
 
       <div class="response-container">
         <h3>AI Response</h3>
         <div id="responseText" class="text-display">
           <p class="placeholder">Response will appear here</p>
+        </div>
+        <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+          <div class="loading-spinner"></div>
+          <span>Processing your request...</span>
         </div>
         <div id="tokenUsage" class="token-usage" style="display: none;">
           <span class="usage-item">Prompt: <strong id="promptTokens">0</strong> tokens (<span id="newTokens">0</span> new, <span id="cachedTokens">0</span> cached)</span>

@@ -413,7 +413,24 @@ async function processText() {
 My instruction: {{INSTRUCTIONS}}`;
     }
 
-    document.getElementById('submitBtn').disabled = true;
+    // Show loading indicators
+    const submitBtn = document.getElementById('submitBtn');
+    const submitBtnText = document.getElementById('submitBtnText');
+    const submitBtnSpinner = document.getElementById('submitBtnSpinner');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const responseText = document.getElementById('responseText');
+
+    submitBtn.disabled = true;
+    submitBtn.classList.add('loading');
+    submitBtnText.textContent = 'Processing...';
+    submitBtnSpinner.style.display = 'inline-block';
+
+    // Hide previous response and show loading indicator
+    responseText.innerHTML = '<p class="placeholder">Processing your request...</p>';
+    loadingIndicator.style.display = 'flex';
+    document.getElementById('copyBtn').style.display = 'none';
+    document.getElementById('tokenUsage').style.display = 'none';
+
     showStatus('Processing...', 'info');
 
     const systemPrompt = "You are a helpful assistant specialized in LaTeX editing and academic writing. The user will provide LaTeX text and instructions for how to modify or improve it.";
@@ -506,18 +523,32 @@ My instruction: {{INSTRUCTIONS}}`;
     const responseText = data.choices[0].message.content;
     
     displayResponse(responseText);
-    
+
     // Display token usage if available
     if (data.usage) {
       displayTokenUsage(data.usage);
     }
-    
+
     showStatus('Processing complete!', 'success');
   } catch (error) {
     console.error('Error:', error);
     showStatus(`Error: ${error.message}`, 'error');
+
+    // Show error in response area
+    document.getElementById('responseText').innerHTML = `<div class="error-response">Error: ${escapeHtml(error.message)}</div>`;
+    document.getElementById('loadingIndicator').style.display = 'none';
   } finally {
-    document.getElementById('submitBtn').disabled = false;
+    // Reset button state
+    const submitBtn = document.getElementById('submitBtn');
+    const submitBtnText = document.getElementById('submitBtnText');
+    const submitBtnSpinner = document.getElementById('submitBtnSpinner');
+
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('loading');
+    submitBtnText.textContent = 'Process Text';
+    submitBtnSpinner.style.display = 'none';
+    document.getElementById('loadingIndicator').style.display = 'none';
+
     updateSubmitButton();
   }
   });
@@ -527,6 +558,7 @@ function displayResponse(text) {
   const container = document.getElementById('responseText');
   container.innerHTML = `<div style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(text)}</div>`;
   document.getElementById('copyBtn').style.display = 'block';
+  document.getElementById('loadingIndicator').style.display = 'none';
 }
 
 function copyResponse() {

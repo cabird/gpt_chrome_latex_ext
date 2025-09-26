@@ -441,6 +441,28 @@ button:disabled {
   flex: 1;
 }
 
+.config-name-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.config-name-row input {
+  flex: 1;
+}
+
+.config-name-row button {
+  width: auto;
+  padding: 8px 16px;
+  margin: 0;
+  font-size: 14px;
+  background: #27ae60;
+}
+
+.config-name-row button:hover {
+  background: #229954;
+}
+
 .delete-config-btn {
   background: #e74c3c;
   color: white;
@@ -450,4 +472,59 @@ button:disabled {
 
 .delete-config-btn:hover {
   background: #c0392b;
+}
+
+/* Loading indicators */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s ease-in-out infinite;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  margin-top: 15px;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e9ecef;
+  border-radius: 50%;
+  border-top-color: #3498db;
+  animation: spin 0.8s ease-in-out infinite;
+}
+
+button.loading {
+  background: #95a5a6;
+  cursor: wait;
+}
+
+button.loading #submitBtnText {
+  margin-right: 4px;
+}
+
+.error-response {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 14px;
 }
